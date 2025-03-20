@@ -4,7 +4,7 @@ Install R Package
 
 You can install the package from Github using:
 
-```remotes::install_github("pacotvj/testsampleR")```
+```remotes::install_github("pacotvj99/testsampleR")```
 
 You may need to install the remotes package first.
 

@@ -6,7 +6,8 @@
 #' can be applied regardless of how the test set was sampled, provided the estimated
 #' share of observation in each cell of the confusion matrix is unbiased:
 #' raw shares are unbiased if test set was SRS, stratified estimators are needed if
-#' test set was drawn with stratified sampling. The function is called internally
+#' test set was drawn with stratified sampling. Note that the sum of the proportion of
+#' observations across all four cells must be one. The function is called internally
 #' within \code{\link{stratified_metrics}}. The following metrics are supported:
 #' precision, recall, F1 score for the positive class, precision of negative class,
 #' recall of negative class, F1 score for the negative class, accuracy, MCC (Matthews
@@ -31,6 +32,9 @@
 #' do_metrics(tr0_pred0 = 0.5, tr1_pred0 = 0.1, tr0_pred1 = 0.1, tr1_pred1 = 0.3)
 #' @export
 do_metrics <- function(tr0_pred0, tr1_pred0, tr0_pred1, tr1_pred1){
+  if(is.na(tr0_pred0) | is.na(tr1_pred0) | is.na(tr0_pred1) | is.na(tr1_pred1)){
+    stop("Invalid confusion matrix.")
+  }
   if(!is.numeric(tr0_pred0) | !is.numeric(tr1_pred0) | !is.numeric(tr0_pred1) | !is.numeric(tr1_pred1)){
     stop("Invalid confusion matrix.")
   }
@@ -90,7 +94,7 @@ do_metrics <- function(tr0_pred0, tr1_pred0, tr0_pred1, tr1_pred1){
 #' Default is NULL, which assumes equal sampling probability across observations.
 #' @param probs A character value capturing the column name of the sampling probabilities.
 #' @param threshold A numeric value capturing the threshold for binary classification.
-#' @param se A character vector indicating whether SEs should be calculated. If all
+#' @param se A logical value whether SEs should be calculated. If all
 #' observations have the same sampling probability, the function calls `se_srs` to
 #' estimate SEs using the analytical formula. In this case, Wilson CI lower and
 #' upper bounds for precision, recall and F1 score are also outputted. If observations
@@ -168,7 +172,7 @@ stratified_metrics <- function(data, truth, pred, probs=NULL, threshold, se=TRUE
   }
 
   if(is.null(probs)){
-    warning("No probabilities in data: constant sampling probability assumed. This is a problem if stratified sampling was used for drawing test set")
+    warning("No probabilities in data: constant sampling probability assumed. This is a problem if stratified sampling was used for drawing test set, but it is fine if the test set is a SRS")
     data$Prob <- 1
   } else if(!is.character(probs)){
     stop("Invalid probs argument")
@@ -180,6 +184,9 @@ stratified_metrics <- function(data, truth, pred, probs=NULL, threshold, se=TRUE
   if(any(data$Prob<0) || any(data$Prob>1)){
     stop("Invalid sampling probabilities")
   }
+  if(any(is.na(data$Prob))){
+    stop("Some sampling probabilities are missing")
+  }
 
   if(!(se %in% c(TRUE, FALSE))){
     stop("Invalid se argument")
@@ -188,7 +195,7 @@ stratified_metrics <- function(data, truth, pred, probs=NULL, threshold, se=TRUE
     if(!is.numeric(seed)){
       stop("Invalid seed")
     }
-    if(!is.numeric(bs)){
+    if(!is.numeric(bs) || is.na(bs)){
       stop("Invalid number of bootstrapping iterations")
     }
     if((bs %% 1)!=0){
@@ -206,8 +213,15 @@ stratified_metrics <- function(data, truth, pred, probs=NULL, threshold, se=TRUE
         data$strata <- as.character(data$strata)
       } else if(!is.character(data$strata)){
         stop("Invalid strata variable")
+      } else if(any(is.na(data$strata))){
+        stop("Some strata are missing")
       }
     }
+  }
+  if(!is.numeric(alpha)){
+    stop("Invalid alpha")
+  } else if(alpha<=0 | alpha>=1){
+    stop("Invalid alpha")
   }
 
   if(!is.character(truth)){
@@ -222,7 +236,7 @@ stratified_metrics <- function(data, truth, pred, probs=NULL, threshold, se=TRUE
   if(sum(colnames(data)==pred)!=1){
     stop("Column with predicted labels cannot be uniquely identified")
   }
-  if(!is.numeric(threshold) || threshold>1 || threshold<0){
+  if(is.na(threshold) || !is.numeric(threshold) || threshold>1 || threshold<0){
     stop("Invalid threshold")
   }
 
@@ -230,6 +244,9 @@ stratified_metrics <- function(data, truth, pred, probs=NULL, threshold, se=TRUE
   data$var1 <- as.numeric(unlist(data[,pred]))
   if(any(!(data$truth %in% c(0,1)))){
     stop("Invalid annotated labels")
+  }
+  if(any(is.na(data$var1))){
+    stop("Some predicted labels are missing")
   }
   if(any(data$var1<0 | data$var1>1)){
     stop("Invalid predicted labels")
@@ -240,7 +257,7 @@ stratified_metrics <- function(data, truth, pred, probs=NULL, threshold, se=TRUE
                                     ifelse(data$var1<threshold, "tr0_pred0", "tr0_pred1"),
                                     ifelse(data$var1<threshold, "tr1_pred0", "tr1_pred1")),
                              levels=c("tr0_pred0", "tr0_pred1", "tr1_pred0", "tr1_pred1"))
-  data <- data[!is.na(data$matrix_cell),]
+  # data <- data[!is.na(data$matrix_cell),]
   tr0_pred0 <- sum((data$matrix_cell == "tr0_pred0") * (1 / data$Prob)) / sum(1 / data$Prob)
   tr1_pred0 <- sum((data$matrix_cell == "tr1_pred0") * (1 / data$Prob)) / sum(1 / data$Prob)
   tr0_pred1 <- sum((data$matrix_cell == "tr0_pred1") * (1 / data$Prob)) / sum(1 / data$Prob)

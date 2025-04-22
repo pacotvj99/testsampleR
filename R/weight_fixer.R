@@ -10,8 +10,7 @@
 #'
 #' @param data A data.frame containing the annotated test set.
 #' @param truth A character value capturing the column name of the annotated labels.
-#' Column should capture whether each observation exhibits the outcome (1/TRUE)
-#' or not (0/FALSE). NAs should be entered for observations that were not annotated.
+#' NAs should be entered for observations that were not annotated.
 #' @param strata A character value capturing the column name of the sampling strata.
 #' Column should contain factor or character values.
 #' @param probs A character value capturing the column name of the sampling probabilities.
@@ -26,7 +25,7 @@
 #' ## sampling, or a SRS of the entire population if the test set was drawn by SRS.
 #' data(sample_df)
 #' sample_df$truth[30:45] <- NA #code some labels as missing because not annotated
-#' weight_fixer(data = sample_df, truth = "truth", strata = "strata", probs="Prob")
+#' fixed_df <- weight_fixer(data = sample_df, truth = "truth", strata = "strata", probs="Prob")
 #' @export
 weight_fixer <- function(data, truth="truth", strata="strata", probs=NULL){
   if("data.frame" %in% class(data)){
@@ -61,6 +60,9 @@ weight_fixer <- function(data, truth="truth", strata="strata", probs=NULL){
   if(any(data$Prob<0) || any(data$Prob>1)){
     stop("Invalid sampling probabilities")
   }
+  if(any(is.na(data$Prob))){
+    stop("Some sampling probabilities are missing")
+  }
 
   if(!is.character(truth)){
     stop("Invalid truth argument")
@@ -77,7 +79,9 @@ weight_fixer <- function(data, truth="truth", strata="strata", probs=NULL){
   } else {
     data$strata <- unlist(data[,strata])
   }
-
+  if(any(is.na(data$strata))){
+    stop("Some strata are missing")
+  }
 
   if(any(is.na(data$truth))){
     # output <- data %>%
@@ -94,10 +98,9 @@ weight_fixer <- function(data, truth="truth", strata="strata", probs=NULL){
       number_in_population <- number_of_sampled / Prob
       Prob_new <- number_of_coded / number_in_population
     })
-    output <- output$Prob_new
   } else{
     message("No weight needs fixing")
-    output <- data$Prob
+    output <- data
   }
   return(output)
 }

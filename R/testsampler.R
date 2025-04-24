@@ -38,11 +38,11 @@
 #' @param na.rm A character value indicating how to deal with NA values in the
 #' stratifying variable (indicated by `stratifying`). Options include: 'drop'
 #' (this drops observations with NA in the stratifying variable), 'stop' (this
-#' ensures the function stops running if there are any NAs in the stratifying variable)
-#' and 'impute' (this median-imputes the NAs in the stratifying variable). Default
-#' is 'stop'. Users can manually create a bin for NAs before using the function
-#' if they so wish, by turning the stratifying variable into a character or factor
-#' variable and encoding missing values with one category (e.g. 'NA').
+#' ensures the function stops running if there are any NAs in the stratifying variable),
+#' 'impute' (this median-imputes the NAs in the stratifying variable) and encode
+#' (this turns the NAs into a stratum of their own; this option is not supported
+#' when using optimal). Default is 'stop'. When 'manual' allocation is selected,
+#' users should create a stratum for NAs manually before calling the function.
 #' @param allocation A character value capturing the type of allocation regime used
 #' for stratified sampling. Options include: 'constant', 'proportional', 'optimal'
 #' and 'manual'. If set to 'constant', the function calls \code{\link{constant_allocation}},
@@ -193,7 +193,7 @@
 #' data(pop_df)
 #' pop_df$somevar <- as.character(rbinom(nrow(pop_df), 2, 0.4)) #create stratifying variable
 #' custom <- c(200, 200, 600)
-#' names(custom) <- c("0", "1", "2")
+#' names(custom) <- c("0", "1", "2") # these names need to match the values of somevar
 #' out <- testsampler(data=pop_df, stratifying='somevar', allocation='manual',
 #'                    manual_allocation=custom)
 #' ## example 9: optimal stratification with categorical labels is only possible if
@@ -351,8 +351,11 @@ testsampler <- function(data, stratifying, N_sample=NA, na.rm="stop", allocation
     }
   }
   if(na.rm=="encode"){
-    missing_data$strata <- "Recoded_missings"
-    data <- rbind(data, missing_data)
+    if(nrow(missing_data)>0){
+      message("NAs in stratifying variable have been encoded as a stratum")
+      missing_data$strata <- "Recoded_missings"
+      data <- rbind(data, missing_data)
+    }
   }
   data <- data[order(data$strata), ]
 
@@ -390,13 +393,11 @@ testsampler <- function(data, stratifying, N_sample=NA, na.rm="stop", allocation
       warning("Optimal allocation could not be performed because all observations fall to the same side of threshold: resorting to proportional allocation")
       myallocation <- proportional_allocation(data=data, N_sample=N_sample, strata="strata", min_per_bin=min_per_bin)
     } else if(pi1>=1 | pi1<=0 | is.na(pi1)){
-      warning("Optimal allocation could not be performed because pi1 was not entered or is invalid: resorting to proportional allocation")
-      myallocation <- proportional_allocation(data=data, N_sample=N_sample, strata="strata", min_per_bin=min_per_bin)
+      stop("Optimal allocation could not be performed because pi1 was not entered or is invalid: reenter pi1 or choose another allocation")
     } else if(!is.numeric(pi0) || is.na(pi0)){
       if(is.numeric(recall) && !is.na(recall)){
         if(recall>=1 | recall<=0){
-          warning("Optimal allocation could not be performed because recall was invalid: resorting to proportional allocation")
-          myallocation <- proportional_allocation(data=data, N_sample=N_sample, strata="strata", min_per_bin=min_per_bin)
+          stop("Optimal allocation could not be performed because recall was invalid: reenter recall or choose another allocation")
         } else {
           myallocation <- optimal_allocation(data = data, N_sample = N_sample, strata = "strata", stratifying = "stratifying",
                                              min_per_bin = min_per_bin, threshold = threshold,
@@ -406,12 +407,10 @@ testsampler <- function(data, stratifying, N_sample=NA, na.rm="stop", allocation
                                              weight_se_prec = weight_se_prec)
         }
       } else {
-        warning("Optimal allocation could not be performed because neither pi0 nor recall was not entered: resorting to proportional allocation")
-        myallocation <- proportional_allocation(data=data, N_sample=N_sample, strata="strata", min_per_bin=min_per_bin)
+        stop("Optimal allocation could not be performed because neither pi0 nor recall was not entered: enter pi0/recall or choose another allocation")
       }
     } else if(pi0>=1 | pi0<=0){
-      warning("Optimal allocation could not be performed because pi0 was invalid: resorting to proportional allocation")
-      myallocation <- proportional_allocation(data=data, N_sample=N_sample, strata="strata", min_per_bin=min_per_bin)
+      stop("Optimal allocation could not be performed because pi0 was invalid: reenter pi0 or choose another allocation")
     } else {
       myallocation <- optimal_allocation(data=data, N_sample=N_sample, strata="strata", stratifying="stratifying",
                                          min_per_bin=min_per_bin, threshold=threshold,
@@ -450,7 +449,7 @@ testsampler <- function(data, stratifying, N_sample=NA, na.rm="stop", allocation
     stop("Missings in allocation")
   }
   if(any(names(strata_count)!=names(myallocation))){
-    stop("Unknown strata in allocation")
+    stop("The strata in the data do not match the strata in the manual allocation")
   }
   if(length(unique(names(myallocation)))!=length(strata_count)){
     stop("Some stratum was entered multiple times")

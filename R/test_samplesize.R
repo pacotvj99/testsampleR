@@ -233,7 +233,7 @@ test_samplesize <- function(se_f1=NULL, se_precision=NULL, se_recall=NULL, pi1=N
     } else if(((max_N %% 1) !=0) | ((min_N %% 1) !=0) | ((by_N %% 1) !=0)){
       stop("Non-integer sampling specifications: check max_N, min_N or by_N")
     } else if(max_N<min_N){
-      stop("Invalid sampling specification: max_N is no bigger than min_N")
+      stop("Invalid sampling specification: max_N should be larger than min_N")
     }
 
     #check pi1
@@ -265,13 +265,13 @@ test_samplesize <- function(se_f1=NULL, se_precision=NULL, se_recall=NULL, pi1=N
 
     ### if we only care about precision
     if(is.numeric(se_precision) & !is.numeric(se_recall) & !is.numeric(se_f1)){
-      pi0 <- NA
       if(is.numeric(pi0) | is.numeric(recall)){
         warning("Recall or pi0 were entered but not needed because se_recall and se_f1 were not specified")
       }
       if(is.numeric(external_positive_share) | is.numeric(external_k)){
         warning("External k or external positive share were entered but not needed because se_recall and se_f1 were not specified")
       }
+      recall <- pi0 <- NA
 
       #hardcheck of parameters
       if(!is.numeric(pi1) || !is.numeric(k)){
@@ -295,42 +295,39 @@ test_samplesize <- function(se_f1=NULL, se_precision=NULL, se_recall=NULL, pi1=N
         if(pi0<=0 | pi0>=1){
           stop("Invalid pi0: pi0 is above 1 or below 0")
         }
-      } else {
-        if(!is.numeric(recall)){
+      } else if(!is.numeric(recall)){
           stop("Recall and pi0 were both missing or invalid: enter recall or pi0")
-        } else {
-          if(recall<=0 | recall >=1){
+      } else if(recall<=0 | recall >=1){
             stop("Invalid recall: recall is above 1 or below 0")
+      } else {
+        # first get the external_k
+        if(!is.numeric(external_k) & is.numeric(external_positive_share)){
+          if(external_positive_share<=0 | external_positive_share>=1){
+            stop("Invalid external_positive_share: external_positive_share is above 1 or below 0")
           } else {
-            # first get the external_k
-            if(!is.numeric(external_k) & is.numeric(external_positive_share)){
-              if(external_positive_share<=0 | external_positive_share>=1){
-                stop("Invalid external_positive_share: external_positive_share is above 1 or below 0")
-              } else {
-                if(external_positive_share>0.5){
-                  warning("external_positive_share above 0.5: you said there are more positives than negatives, but typically positives are defined as the rare class")
-                }
-                external_k <- get_k(external_positive_share)
-              }
-            } else if(is.numeric(external_k) & is.numeric(external_positive_share)){
-              message("Both external_k and external_positive_share specified: external_k used for analysis")
-            } else if(!is.numeric(external_k) & !is.numeric(external_positive_share)){
-              message("In-sample imbalance assumed to estimate pi0")
-              external_k <- k
-            } else if(external_k>1){
-              warning("external_k above 1: you said there are more positives than negatives, but typically positives are defined as the rare class")
+            if(external_positive_share>0.5){
+              warning("external_positive_share above 0.5: you said there are more positives than negatives, but typically positives are defined as the rare class")
             }
-
-            #then estimate pi0
-            pi0 <- get_pi0(pi1, recall, external_k)
-            if(!is.numeric(pi0) || is.na(pi0)){
-              message("pi0 was calculated but is invalid")
-            } else if(pi0<=0 | pi0>=1){
-              stop("pi0 was calculated but is invalid")
-            }
+            external_k <- get_k(external_positive_share)
           }
+        } else if(is.numeric(external_k) & is.numeric(external_positive_share)){
+          message("Both external_k and external_positive_share specified: external_k used for analysis")
+        } else if(!is.numeric(external_k) & !is.numeric(external_positive_share)){
+          message("In-sample imbalance assumed to estimate pi0")
+          external_k <- k
+        } else if(external_k>1){
+          warning("external_k above 1: you said there are more positives than negatives, but typically positives are defined as the rare class")
+        }
+
+        #then estimate pi0
+        pi0 <- get_pi0(pi1, recall, external_k)
+        if(!is.numeric(pi0) || is.na(pi0)){
+          message("pi0 was calculated but is invalid")
+        } else if(pi0<=0 | pi0>=1){
+          stop("pi0 was calculated but is invalid")
         }
       }
+
 
       #hard check of key parameters
       if(!is.numeric(pi1) | !is.numeric(pi0) | !is.numeric(k)){

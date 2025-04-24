@@ -1,0 +1,113 @@
+---
+title: "Vignette of testsampleR package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{my-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(testsampleR)
+```
+
+This vignette illustrates how to use the `testsampleR` package, with a start-to-finish illustration of its core functionalities. This package is designed to help users evaluate their machine learning classifiers on a test set. Specifically, the package allows users to rigorously determine the appropriate size of a test set, draw test sets with a stratified approach that yields more precise performance estimates, and quantify uncertainty around estimates with appropriate standard errors or confidence intervals. Together, these tools help researchers make more informative and rigorous claims about how well a classifier performed in a specific application.
+
+In this example application, we have a population of online comments that we have put through a hate speech detection classifier: the numbers in `score` denote the probability that a comment contains hate speech, as predicted by a classifier. We will load and use this data for illustration.
+
+```{r}
+data(pop_df)
+head(pop_df)
+```
+
+
+We want to use a test set to learn how well our hate speech classifier performed in this context. Importantly, none of the observations in the data have been used to train the hate speech classifier: this means that the data we are inspecting has not been seen by the model. This can happen either because we are using some off-the-shelf classifier (e.g. Google's Perspective), or because we trained on some other data (e.g. sampled the training set and test set separately). How big a test set should we draw? That depends on three things: (i) what metrics we care about, (ii) how imbalanced the data is, (iii) what performance we expect.
+
+Regarding point (i), let's say that we care about the F1 score. Test sets are costly to annotate (in terms of time or money), so we want to sample the smallest test set possible, given how much variance we are willing to accept around the F1. Let's say we are willing to accept a 2pp standard error for the F1 score. Regarding point (ii), the imbalance can be observed directly from the data: we can check what proportion of observations are positive. Assuming that we dichotomize classifications at the 0.5 threshold, the proportion of positives is:
+
+```{r}
+positive_share <- mean(pop_df$score>0.5)
+positive_share
+```
+
+Lastly, regarding point (iii), we need to make some guesses about what performance we expect the classifier to have. We can base these on previous experience with similar tasks, or on the excluded folds in the training's cross-validation, or on previous performance of the classifier as established by other people's validations. Let's say that we expect precision of 0.6 and recall of 0.5. This means that we expect the classifier to catch 60% of the actually hateful comments, and that 50% of comments flagged as hateful by the classifier will truly be so. Given all this information, we can use function `test_samplesize` to determine how large a test set we need to draw:
+
+```{r}
+test_samplesize(se_f1 = 0.02, pi1 = 0.6, recall = 0.5, positive_share = positive_share)
+```
+
+The results show that if we drew the test set as a simple random sample, we would need 2228 observations to achieve the desired SE. If we use efficient stratification instead, we only need 1226 observations! To achieve this efficiency gains, we are advised to sample 567 positives and 659 negatives.
+
+If we decide to use efficient stratification, we can then use the `testsampler` function to actually draw the test set. To reap some additional reductions in variance, we will use a finer strata: we will subdivide the positive and negative subsamples in 5 bins each, resulting in 10 bins in total. Given that we want to use efficient stratification, we need to set `allocation` to 'optimal', and specify what the stratifying variable is (`score`), as well as our desired sample size, which we calculated earlier. The output will be a dataframe containing our test-set observations.
+
+```{r}
+# we can specify the number of positives to be sampled: the 567 derived above
+testset <- testsampler(data = pop_df, stratifying = "score", N_sample = 1226, 
+                       allocation = "optimal", n_positive = 567, seed = 1234)
+
+# alternatively, we can enter the parameters we entered earlier. the result is the same
+testset <- testsampler(data = pop_df, stratifying = "score", N_sample = 1226, 
+                       allocation = "optimal", pi1 = 0.6, recall = 0.5, seed = 1234)
+head(testset)
+```
+
+Now we have drawn a stratified test set, using efficient stratification. We could have drawn the test set using other stratification approaches. For instance, we could have used constant stratification, which samples the same number of observations in each stratum. Or proportional stratification, which samples from each stratum in proportion to their size in the population. Or we could have used simple random sampling. You can see below how to implement these approaches, and a comparison of how the distribution of sampled observations differs across test sets: this shows that efficient allocation allows us to sample more positives than SRS.
+
+```{r}
+# proportional stratification
+prop_testset <- testsampler(data = pop_df, stratifying = "score", N_sample = 1226,
+                            allocation = "proportional", seed = 1234)
+
+# constant stratification
+const_testset <- testsampler(data = pop_df, stratifying = "score", N_sample = 1226, 
+                             allocation = "constant", seed = 1234)
+
+# no stratification: simple random sample
+set.seed(1234)
+srs_testset <- pop_df[sample(nrow(pop_df), 1226),]
+
+# comparison of the different distribution of observations for different sampling
+table(testset$strata)
+table(prop_testset$strata)
+table(const_testset$strata)
+srs_testset$strata <- cut(srs_testset$score, breaks=seq(0,1,0.1))
+table(srs_testset$strata)
+
+```
+
+Now we have drawn our test set. Let's say we annotate it: if these are online comments, we would identify whether the outcome of interest is present or not. I'll generate random annotations just for illustration, but in any actual application, the annotations will of course not be randomly generated.
+
+```{r}
+set.seed(1234)
+testset$truth <- rbinom(nrow(testset), 1, testset$score)
+```
+
+We now want to create metrics that show how well or badly our classifier performs, as compared to our gold-standard annotations. We can implement this using the `stratified_metrics` function. We just need to enter our test set, and clarify which columns contain the gold-standard annotations, the classifier annotations (continuous probability or binary), and the sampling probabilities. The latter are used to reweigh the annotations so that the test set remains representative of the original population. The function would work with any stratified test set: I illustrate this with the test set drawn with efficient stratification.
+
+```{r}
+# we can enter the continuous scores, along with a threshold for dichotomizing them
+stratified_metrics(testset, 'truth', 'score', 'Prob', threshold=0.5)
+```
+
+The output contains metrics alongside their SEs. If we want bootstrapped CIs, the function can also support these, but then we must also enter the name of the variable containing the strata:
+```{r}
+# we can enter the continuous scores, along with a threshold for dichotomizing them
+stratified_metrics(data = testset, truth = 'truth', pred = 'score', probs = 'Prob', 
+                   threshold = 0.5, strata = 'strata', bs = 300)
+```
+
+If we sampled the test set using simple random sampling (SRS), we could also use `stratified_metrics` to compute metrics and their standard errors. This is the most commonly drawn test set: if you drew your training and test set together as a SRS from the population, and partitioned them later, then your test set is also a SRS itself. In the SRS case, the function also allows showing Wilson CIs, which have better small-sample properties (coverage, overshoot) than bootstrapped CIs. As you can see, the SEs are larger than what they would be had we used stratified sampling: stratified sampling allows us to get less noisy estimates of performance.
+
+```{r}
+# we can enter the continuous scores, along with a threshold for dichotomizing them
+srs_testset$truth <- rbinom(nrow(srs_testset), 1, srs_testset$score)
+stratified_metrics(data = srs_testset, truth = 'truth', pred = 'score', threshold = 0.5)
+```
+

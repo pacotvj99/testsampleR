@@ -379,8 +379,8 @@ testsampler <- function(data, stratifying, N_sample=NA, na.rm="stop", allocation
           pi1 <- as.numeric(mean(trained_model$resampledCM$cell4/(trained_model$resampledCM$cell2+trained_model$resampledCM$cell4), na.rm=T))
           pi0 <- as.numeric(mean(trained_model$resampledCM$cell3/(trained_model$resampledCM$cell3+trained_model$resampledCM$cell1), na.rm=T))
         }, silent = TRUE)
-        pi1 <- ifelse(is.null(pi1) | is.na(pi1), NA, pi1)
-        pi0 <- ifelse(is.null(pi0) | is.na(pi1), NA, pi0)
+        pi1 <- ifelse(is.null(pi1) || is.na(pi1), NA, pi1)
+        pi0 <- ifelse(is.null(pi0) || is.na(pi1), NA, pi0)
       }
     }
 

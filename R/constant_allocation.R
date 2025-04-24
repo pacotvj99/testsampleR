@@ -33,7 +33,7 @@
 #' ## for instance, the following code will lead to some NA in strata
 #' ## and these get grouped into a separate stratum
 #' pop_df$strata <- cut(pop_df$score, breaks=c(0,0.2,0.4,0.6,0.8,0.9))
-#' proportional_allocation(data=pop_df, N_sample=375, strata="strata", min_per_bin=1)
+#' constant_allocation(data=pop_df, N_sample=375, strata="strata", min_per_bin=1)
 #' @export
 constant_allocation <- function(data, N_sample, strata, min_per_bin=1){
   if("data.frame" %in% class(data)){

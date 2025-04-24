@@ -5,7 +5,10 @@
 #' This function can be used to determine how many observations to sample per stratum
 #' under constant allocation. It first divides the desired sample size equally across
 #' all strata, and then rounds the allocated observations per bin, and lastly adjusts
-#' them so the overall sample size is as close to the target as possible.
+#' them so the overall sample size is as close to the target as possible. Note the
+#' function disregards NAs in the strata variable. Note the strata can be based on
+#' any information: either binned predicted probabilities (quantile- or fixed-intervals) or
+#' any other categorical information.
 #'
 #' @param data A data.frame from which to sample observations. One column should
 #' contain the strata used for sampling.
@@ -34,7 +37,7 @@ constant_allocation <- function(data, N_sample, strata, min_per_bin=1){
   } else {
     stop("Invalid input data")
   }
-  if(!is.numeric(N_sample) || !is.numeric(min_per_bin)){
+  if(!is.numeric(N_sample) || !is.numeric(min_per_bin) || is.na(N_sample) || is.na(min_per_bin)){
     stop("Invalid binning specifications")
   } else if(((N_sample%%1)!=0) || ((min_per_bin%%1)!=0)){
     stop("Invalid binning specifications")
@@ -53,12 +56,16 @@ constant_allocation <- function(data, N_sample, strata, min_per_bin=1){
     stop("Invalid strata variable")
   }
   if(any(is.na(data$strata))){
-    warning("NAs in strata variable")
+    warning("NAs in strata variable: recoded as a separate stratum")
+    data$strata[is.na(data$strata)] <- "Recoded_missings"
   }
 
   #create count of observations per bin
   strata_count <- table(data$strata)
   strata_count <- strata_count[order(names(strata_count))]
+  if(N_sample>nrow(data)){
+    stop("Error: sample size is bigger than population data")
+  }
   if((min_per_bin*length(strata_count))>N_sample){
     stop("Error: too many bins given the sample size")
   }

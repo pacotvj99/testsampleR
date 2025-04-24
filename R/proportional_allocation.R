@@ -5,7 +5,10 @@
 #' This function can be used to determine how many observations to sample per stratum
 #' under proportional allocation. It first divides the desired sample size proportionally
 #' to each stratum's size, then rounds the allocated observations per bin, and lastly
-#' adjusts them so the overall sample size is as close to the target as possible.
+#' adjusts them so the overall sample size is as close to the target as possible. Note the
+#' function disregards NAs in the strata variable. Note the strata can be based on
+#' any information: either binned predicted probabilities (quantile- or fixed-intervals) or
+#' any other categorical information.
 #'
 #' @param data A data.frame from which to sample observations. One column should
 #' contain the strata used for sampling.
@@ -35,7 +38,7 @@ proportional_allocation <- function(data, N_sample, strata, min_per_bin=1){
   } else {
     stop("Invalid input data")
   }
-  if(!is.numeric(N_sample) || !is.numeric(min_per_bin)){
+  if(!is.numeric(N_sample) || !is.numeric(min_per_bin) || is.na(N_sample) || is.na(min_per_bin)){
     stop("Invalid binning specifications")
   } else if(((N_sample%%1)!=0) || ((min_per_bin%%1)!=0)){
     stop("Invalid binning specifications")
@@ -48,7 +51,8 @@ proportional_allocation <- function(data, N_sample, strata, min_per_bin=1){
     stop("Column with strata cannot be uniquely identified")
   }
   if(any(is.na(data$strata))){
-    warning("NAs in strata variable")
+    warning("NAs in strata variable: recoded as a separate stratum")
+    data$strata[is.na(data$strata)] <- "Recoded_missings"
   }
   data$strata <- unlist(data[,strata])
   if(is.factor(data$strata)){
@@ -60,7 +64,10 @@ proportional_allocation <- function(data, N_sample, strata, min_per_bin=1){
   #create count of observations per bin
   strata_count <- table(data$strata)
   strata_count <- strata_count[order(names(strata_count))]
-  if(length(strata_count)>N_sample){
+  if(N_sample>nrow(data)){
+    stop("Error: sample size is bigger than population data")
+  }
+  if((min_per_bin*length(strata_count))>N_sample){
     stop("Error: too many bins given the sample size")
   }
   strata_count <- strata_count[strata_count>0]
@@ -89,15 +96,31 @@ proportional_allocation <- function(data, N_sample, strata, min_per_bin=1){
       #rebalance after rounding so it still is as close as possible to N_sample
       needup <- N_sample-sum(myallocation)
       if(needup>0){
-        myallocation[names(sort(remainders[remainders<=0.5], decreasing=TRUE))[1:needup]] <-
-          myallocation[names(sort(remainders[remainders<=0.5], decreasing=TRUE))[1:needup]] + 1
+        which_tweak <- names(sort(remainders[remainders>=0.5], decreasing=TRUE))
+        if(length(which_tweak)==0){
+          which_tweak <- sort(names(myallocation))[1:needup]
+          which_tweak <- which_tweak[!is.na(which_tweak)]
+        }
+        if(length(which_tweak) < needup){
+          needup <- length(which_tweak)
+        }
+        myallocation[which_tweak[1:needup]] <-
+          myallocation[which_tweak[1:needup]] + 1
       } else if(needup<0){
-        myallocation[names(sort(remainders[remainders>=0.5]))[1:(-needup)]] <-
-          myallocation[names(sort(remainders[remainders>=0.5]))[1:(-needup)]] - 1
+        which_tweak <- names(sort(remainders[remainders>=0.5]))
+        if(length(which_tweak)==0){
+          which_tweak <- sort(names(myallocation))[1:(-needup)]
+          which_tweak <- which_tweak[!is.na(which_tweak)]
+        }
+        if(length(which_tweak) < (-needup)){
+          needup <- -length(which_tweak)
+        }
+        myallocation[which_tweak[1:(-needup)]] <-
+          myallocation[which_tweak[1:(-needup)]] - 1
       }
     }
     #if sample more obs than there are in some bin, if sample zero obs in some bin, or if some fewer than min_per_bin while possible to sample more, then keep going
-    any_issues <- any((myallocation<min_per_bin & strata_count>=min_per_bin) | (myallocation<1) | (strata_count < myallocation))
+    any_issues <- any((myallocation<min_per_bin & strata_count>=min_per_bin) | (myallocation<1) | (strata_count < myallocation) | (sum(myallocation)!=N_sample))
     iter <- iter + 1
   }
 

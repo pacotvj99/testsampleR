@@ -366,8 +366,8 @@ testsampler <- function(data, stratifying, N_sample=NA, na.rm="stop", allocation
     myallocation <- proportional_allocation(data=data, N_sample=N_sample, strata="strata", min_per_bin=min_per_bin)
   } else if(allocation == "optimal"){
     if(!is.numeric(n_positive)){
-      pi1 <- ifelse(is.null(pi1) | is.na(pi1), NA, pi1)
-      pi0 <- ifelse(is.null(pi0) | is.na(pi1), NA, pi0)
+      pi1 <- ifelse(is.null(pi1) || is.na(pi1), NA, pi1)
+      pi0 <- ifelse(is.null(pi0) || is.na(pi1), NA, pi0)
       if(is.numeric(pi0)){
         if(is.numeric(recall)){
           message("Both pi0 and recall specified: only pi0 used for analysis")

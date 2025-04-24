@@ -5,19 +5,19 @@
 #' This function can be used to determine how many observations to sample per stratum
 #' under efficient stratified sampling. To do so, you should stratify by the
 #' predicted probability of exhibiting the outcome, as produced by the classifier to be
-#' evaluated: this should be the `stratifying` variable. At minimum, the `strata` variable
-#' you should have one stratum for the positive and one for the negatives. You can create
-#' additional strata by binning the predicted probability, but importantly
-#' each stratum should contain only positive or only negative observations.
-#' The function first determines how many positive observations should be
-#' sampled in the test set, given parameter values and objective function, calling
-#' \code{\link{optimal_n_positives}} internally. This is the value that minimizes an
-#' objective function subject to a sample size constraint (see documentation of function
-#' \code{\link{optimal_n_positives}} for details). Then, the function performs
-#' proportional allocation within the positive and negative subsamples separately,
-#' adjusting the number of sampled observations per bin so that the overall sample
-#' size is as close to the target as possible. Note the function disregards NAs in
-#' the strata variable.
+#' evaluated: this should be the `stratifying` variable. The strata in `strata` should be
+#' based on this variable, and neither the `stratifying` variable nor the `strata`
+#' variable should contain NAs. At minimum, the `strata` variable should have one
+#' stratum for the positive and one for the negatives. You can create additional
+#' strata by binning the predicted probability, but importantly each stratum should
+#' contain only positive or only negative observations. The function first determines
+#' how many positive observations should be sampled in the test set, given parameter
+#' values and objective function, calling \code{\link{optimal_n_positives}} internally.
+#' This is the value that minimizes an objective function subject to a sample size
+#' constraint (see documentation of function \code{\link{optimal_n_positives}} for details).
+#' Then, the function performs proportional allocation within the positive and negative
+#' subsamples separately, adjusting the number of sampled observations per bin so
+#' that the overall sample size is as close to the target as possible.
 #' The following parameters need to be entered to receive an output: (i) pi1 (precision,
 #' TP/(TP+FP)), (ii) pi0 (FN/(FN+TN)) or recall (FN/(FN+TN)). These parameters should
 #' be guessed or estimated on other data (pi0, pi1, recall). Note that if recall is entered instead
@@ -105,10 +105,6 @@
 #'                    stratifying = 'score', min_per_bin=1, threshold=0.5,
 #'                    pi1=0.4, recall=0.6, external_k=0.5,
 #'                    weight_se_f1=1, weight_se_rec=0, weight_se_prec=0)
-#' ## note the function disregards NAs in the strata variable
-#' ## note that for optimal allocation the strata must be based somehow on predicted
-#' ## probabilities (quantile- or fixed-intervals, where each stratum contains only
-#' ## positives or only negatives but not both)
 #' @references
 #' Tomas-Valiente, F. (2025). Uncertain performance: How to quantify uncertainty and
 #' draw test sets when evaluating classifiers.
@@ -173,7 +169,7 @@ optimal_allocation <- function(data, N_sample, strata, stratifying, min_per_bin=
   sam_neg <- data[data$stratifying<threshold,]
   if(any(sam_pos$strata %in% unique(sam_neg$strata)) |
      any(sam_neg$strata %in% unique(sam_pos$strata))){
-    stop("Some stratum contains both positives and negatives")
+    stop("Some stratum contains both positive and negative observations")
   }
 
   #estimate optimal number of positives
@@ -350,6 +346,9 @@ optimal_n_positives <- function(N_sample=NULL, pi1=NULL, pi0=NULL, recall=NULL, 
     }
   } else if(is.numeric(k) & is.numeric(positive_share)){
     message("Both k and positive share specified: k used for analysis")
+    if(k>1){
+      warning("k above 1: you said there are more positives than negatives, but typically positives are defined as the rare class")
+    }
   } else if(!is.numeric(k) & !is.numeric(positive_share)){
     stop("No information on imbalance: both k and positive_share are missing or invalid")
   } else if(k>1){
@@ -376,15 +375,15 @@ optimal_n_positives <- function(N_sample=NULL, pi1=NULL, pi0=NULL, recall=NULL, 
   }
 
   #checks on pi0 and reconstruct if not entered or non-numeric
-  if(is.numeric(pi0)){
-    if(is.numeric(recall)){
+  if(is.numeric(pi0) & !is.na(pi0)){
+    if(is.numeric(recall) & !is.na(recall)){
       message("Both pi0 and recall specified: only pi0 used for analysis")
     }
     if(pi0<=0 | pi0>=1){
       stop("Invalid pi0: pi0 is above 1 or below 0")
     }
   } else {
-    if(!is.numeric(recall)){
+    if(!is.numeric(recall) | is.na(recall)){
       stop("Recall and pi0 were both missing or invalid: enter recall or pi0")
     } else {
       if(recall<=0 | recall >=1){
@@ -405,7 +404,8 @@ optimal_n_positives <- function(N_sample=NULL, pi1=NULL, pi0=NULL, recall=NULL, 
         } else if(!is.numeric(external_k) & !is.numeric(external_positive_share)){
           message("In-sample imbalance assumed to estimate pi0")
           external_k <- k
-        } else if(external_k>1){
+        }
+        if(external_k>1){
           warning("external_k above 1: you said there are more positives than negatives, but typically positives are defined as the rare class")
         }
 

@@ -5,8 +5,8 @@
 #' This function can be used to determine how many observations to sample per stratum
 #' under constant allocation. It first divides the desired sample size equally across
 #' all strata, and then rounds the allocated observations per bin, and lastly adjusts
-#' them so the overall sample size is as close to the target as possible. Note the
-#' function disregards NAs in the strata variable. Note the strata can be based on
+#' them so the overall sample size is as close to the target as possible. NAs in the
+#' strata variable will be coded as a stratum themselves. Note the strata can be based on
 #' any information: either binned predicted probabilities (quantile- or fixed-intervals) or
 #' any other categorical information.
 #'
@@ -27,9 +27,13 @@
 #' data(pop_df)
 #' pop_df$strata <- cut(pop_df$score, 10)
 #' constant_allocation(data=pop_df, N_sample=375, strata="strata", min_per_bin=1)
-#' ## note the function disregards NAs in the strata variable
 #' ## note the strata can be based on any information: either predicted probabilities
 #' ## (quantile- or fixed-intervals) or any other categorical information
+#' ## NAs in the strata variable will be coded as a separate stratum
+#' ## for instance, the following code will lead to some NA in strata
+#' ## and these get grouped into a separate stratum
+#' pop_df$strata <- cut(pop_df$score, breaks=c(0,0.2,0.4,0.6,0.8,0.9))
+#' constant_allocation(data=pop_df, N_sample=375, strata="strata", min_per_bin=1)
 #' @export
 constant_allocation <- function(data, N_sample, strata, min_per_bin=1){
   if("data.frame" %in% class(data)){

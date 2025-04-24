@@ -1,9 +1,9 @@
 Package: testsampleR
 Title: Sampling Test Sets and Quantifying Uncertainty for Evaluating Classifiers
-Version: 0.0.0.9001
+Version: 0.0.0.9008
 Author: Francisco Tomas-Valiente <tomasf@ethz.ch> [aut, cre]
 Maintainer: Francisco Tomas-Valiente <tomasf@ethz.ch>
-Description: Provides functions to design stratified sampling schemes that allow drawing test sets that reduce the variance around performance estimates. In doing so, the package supports various allocations. Additionally, the package provides functions that estimates metrics with standard errors for test set drawn with simple random sampling and stratified sampling. Lastly, the package allows researchers to implement sample size calculations to decide how large a test set to draw to achieve a desired level of statistical precision.
+Description: This package provides tools for designing and drawing test sets for classifier evaluation, and for quantifying uncertainty in resulting performance metrics. It does so by implementing the methods developed in Tomas-Valiente (2025), which develops sampling distributions for performance metrics based on SRS or stratified test sets. In particular, the package provides functions to design stratified sampling schemes that allow drawing test sets that reduce the variance around performance estimates. In doing so, the package supports various allocations. Additionally, the package provides functions that estimates metrics with standard errors for test set drawn with simple random sampling and stratified sampling. Lastly, the package allows researchers to implement sample size calculations to decide how large a test set to draw to achieve a desired level of statistical precision.
 License: GPL-3
 Encoding: UTF-8
 RoxygenNote: 7.3.2
@@ -11,3 +11,7 @@ Date/Publication: 2025-03-18 23:00:00 CET
 Depends: 
     R (>= 2.10)
 LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

@@ -80,54 +80,71 @@ proportional_allocation <- function(data, N_sample, strata, min_per_bin=1){
   myallocation <- N_sample*strata_count/sum(strata_count)
   names(myallocation) <- names(strata_count)
 
-  any_issues <- TRUE
-  iter <- 1
-  while(any_issues && iter<=1000){
-    #if allocation implies sampling fewer than min_per_bin, coerce it to min_per_bin
-    which_binding <- myallocation<min_per_bin
-    myallocation <- ifelse(which_binding, min_per_bin, myallocation)
-    #if allocation implies sampling more obs than there are, coerce it to the number of obs in the bin
-    strata_count_off <- (strata_count - myallocation) <0
-    myallocation[strata_count_off] <- strata_count[strata_count_off]
-    #proportionally rebalance the allocation so it still sums to N_sample
-    needup <- N_sample-sum(myallocation)
-    myallocation[!which_binding & !strata_count_off] <- myallocation[!which_binding & !strata_count_off]+
-      (needup*strata_count/sum(strata_count))[!which_binding & !strata_count_off]
-    #round up allocations so it is as close as possible to N_sample
-    remainders <- myallocation %% 1
-    if(any(remainders!=0)){
-      myallocation <- round(myallocation)
-      #rebalance after rounding so it still is as close as possible to N_sample
-      needup <- N_sample-sum(myallocation)
-      if(needup>0){
-        which_tweak <- names(sort(remainders[remainders>=0.5], decreasing=TRUE))
-        if(length(which_tweak)==0){
-          which_tweak <- sort(names(myallocation))[1:needup]
-          which_tweak <- which_tweak[!is.na(which_tweak)]
+  #if allocation implies sampling fewer than min_per_bin, coerce it to min_per_bin
+  which_binding <- myallocation<min_per_bin
+  myallocation <- ifelse(which_binding, min_per_bin, myallocation)
+  #if allocation implies sampling more obs than there are, coerce it to the number of obs in the bin
+  strata_count_off <- (strata_count - myallocation) <0
+  myallocation[strata_count_off] <- strata_count[strata_count_off]
+  #proportionally rebalance the allocation so it still sums to N_sample
+  needup <- N_sample-sum(myallocation)
+  free_bins <- !which_binding & !strata_count_off
+  if(any(free_bins)){
+    myallocation_tentative <- myallocation
+    myallocation_tentative[free_bins] <- myallocation[free_bins]+(needup*strata_count[free_bins]/sum(strata_count[free_bins]))
+    if(all(floor(myallocation_tentative)<=strata_count & floor(myallocation_tentative)>=min_per_bin)){
+      myallocation <- myallocation_tentative
+    } else {
+      warning("Attempt for proportional rebalancing violated min/cap constraints. Defaulting to cycling Hamilton allocation.")
+    }
+  }
+  #fix the remainders in hamilton loop
+  frac <- myallocation - floor(myallocation)
+  myallocation <- floor(myallocation)
+  needup <- N_sample-sum(myallocation)
+  if(needup>0){
+    candidates <- which(!strata_count_off)
+    if(length(candidates)>0){
+      myreorder <- order(frac[candidates], decreasing=TRUE)
+      needup_i <- 1 # this is juse for the cycling
+      while(needup > 0 & length(myreorder) > 0){
+        idx <- myreorder[((needup_i - 1) %% length(myreorder)) + 1]  # this ensures we cycle over the possible bins
+        space <- strata_count[candidates][idx] - myallocation[candidates][idx]
+        add <- min(space, 1)  # give at most one per pass to keep fairness
+        myallocation[candidates][idx] <- myallocation[candidates][idx] + add
+        needup <- needup - add
+        needup_i <- needup_i + 1 # this is juse for the cycling
+        # if a candidate becomes full, remove it from myreorder
+        if(myallocation[candidates][idx] >= strata_count[candidates][idx]){
+          myreorder <- myreorder[myreorder != idx]
         }
-        if(length(which_tweak) < needup){
-          needup <- length(which_tweak)
-        }
-        myallocation[which_tweak[1:needup]] <-
-          myallocation[which_tweak[1:needup]] + 1
-      } else if(needup<0){
-        which_tweak <- names(sort(remainders[remainders>=0.5]))
-        if(length(which_tweak)==0){
-          which_tweak <- sort(names(myallocation))[1:(-needup)]
-          which_tweak <- which_tweak[!is.na(which_tweak)]
-        }
-        if(length(which_tweak) < (-needup)){
-          needup <- -length(which_tweak)
-        }
-        myallocation[which_tweak[1:(-needup)]] <-
-          myallocation[which_tweak[1:(-needup)]] - 1
       }
     }
-    #if sample more obs than there are in some bin, if sample zero obs in some bin, or if some fewer than min_per_bin while possible to sample more, then keep going
-    any_issues <- any((myallocation<min_per_bin & strata_count>=min_per_bin) | (myallocation<1) | (strata_count < myallocation) | (sum(myallocation)!=N_sample))
-    iter <- iter + 1
+  } else if(needup<0){
+    candidates <- which(!which_binding)
+    if(length(candidates)>0){
+      myreorder <- order(frac[candidates], decreasing=FALSE)
+      needup_i <- 1
+      while(needup < 0 & length(myreorder) > 0){
+        idx <- myreorder[((needup_i - 1) %% length(myreorder)) + 1]  # cyclic if needup > length(ord)
+        space <- myallocation[candidates][idx] - min_per_bin
+        add <- min(space, 1)  # give at most one per pass to keep fairness
+        myallocation[candidates][idx] <- myallocation[candidates][idx] - add
+        needup <- needup + add
+        needup_i <- needup_i + 1
+        # if a candidate becomes full, remove it from ord
+        if(myallocation[candidates][idx] == min_per_bin){
+          myreorder <- myreorder[myreorder != idx]
+        }
+      }
+    }
   }
-
+  any_issues <- any((myallocation < min_per_bin & strata_count >= min_per_bin) |
+                      (myallocation < 1) |
+                      (strata_count < myallocation))
+  if(sum(myallocation) != N_sample){
+    warning("Final allocation does not sum to N_sample; returning feasible allocation.")
+  }
   if(any_issues){
     stop("Error: Valid allocation could not be found")
   }

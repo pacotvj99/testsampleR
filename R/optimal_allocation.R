@@ -130,14 +130,14 @@ optimal_allocation <- function(data, N_sample, strata, stratifying, min_per_bin=
   if(sum(colnames(data)==strata)!=1){
     stop("Column with strata cannot be uniquely identified")
   }
+  data$stratifying <- unlist(data[,stratifying])
+  data$strata <- unlist(data[,strata])
   if(any(is.na(data$stratifying))){
     stop("NAs in stratifying variable")
   }
   if(any(is.na(data$strata))){
     stop("NAs in strata variable")
   }
-  data$stratifying <- unlist(data[,stratifying])
-  data$strata <- unlist(data[,strata])
 
   if(threshold>1 | threshold<0){
     stop("Invalid threshold")
@@ -182,11 +182,11 @@ optimal_allocation <- function(data, N_sample, strata, stratifying, min_per_bin=
   }
 
   #if optimally sample fewer positives than there are bins, coerce the sampled number of positives to the number of bins same for negatives
-  if(optimal_n < length(unique(sam_pos$strata[!is.na(sam_pos$strata)]))){
-    optimal_n <- length(unique(sam_pos$strata))*min_per_bin
+  if(optimal_n < (length(unique(sam_pos$strata[!is.na(sam_pos$strata)]))*min_per_bin)){
+    optimal_n <- length(unique(sam_pos$strata[!is.na(sam_pos$strata)]))*min_per_bin
     message("More positive bins than positives to be optimally sampled")
-  } else if((N_sample - optimal_n) < length(unique(sam_neg$strata[!is.na(sam_neg$strata)]))){
-    optimal_n <- N_sample - length(unique(sam_neg$strata))*min_per_bin
+  } else if((N_sample - optimal_n) < (length(unique(sam_neg$strata[!is.na(sam_neg$strata)]))*min_per_bin)){
+    optimal_n <- N_sample - length(unique(sam_neg$strata[!is.na(sam_neg$strata)]))*min_per_bin
     message("More negative bins than positives to be optimally sampled")
   }
 

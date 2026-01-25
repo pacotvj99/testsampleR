@@ -48,8 +48,9 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -60,7 +61,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -392,9 +393,9 @@ previous experience with similar tasks, or on the excluded folds in the
 training’s cross-validation, or on previous performance of the
 classifier as established by other people’s validations. Let’s say that
 we expect precision of 0.6 and recall of 0.5. This means that we expect
-the classifier to catch 60% of the actually hateful comments, and that
-50% of comments flagged as hateful by the classifier will truly be so.
-Given all this information, we can use function
+that 60% of comments flagged as hateful by the classifier will truly be
+so, and expect the classifier to catch 50% of the actually hateful
+comments. Given all this information, we can use function
 <code>test_samplesize</code> to determine how large a test set we need
 to draw:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">test_samplesize</span>(<span class="at">se_f1 =</span> <span class="fl">0.02</span>, <span class="at">pi1 =</span> <span class="fl">0.6</span>, <span class="at">recall =</span> <span class="fl">0.5</span>, <span class="at">positive_share =</span> positive_share)</span>
@@ -423,20 +424,20 @@ be a dataframe containing our test-set observations.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># we can specify the number of positives to be sampled: the 567 derived above</span></span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>testset <span class="ot">&lt;-</span> <span class="fu">testsampler</span>(<span class="at">data =</span> pop_df, <span class="at">stratifying =</span> <span class="st">&quot;score&quot;</span>, <span class="at">N_sample =</span> <span class="dv">1226</span>, </span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>                       <span class="at">allocation =</span> <span class="st">&quot;optimal&quot;</span>, <span class="at">n_positive =</span> <span class="dv">567</span>, <span class="at">seed =</span> <span class="dv">1234</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; Optimal allocation with pre-specified number of positives</span></span></code></pre></div>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co"># alternatively, we can enter the parameters we entered earlier. the result is the same</span></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>testset <span class="ot">&lt;-</span> <span class="fu">testsampler</span>(<span class="at">data =</span> pop_df, <span class="at">stratifying =</span> <span class="st">&quot;score&quot;</span>, <span class="at">N_sample =</span> <span class="dv">1226</span>, </span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>                       <span class="at">allocation =</span> <span class="st">&quot;optimal&quot;</span>, <span class="at">pi1 =</span> <span class="fl">0.6</span>, <span class="at">recall =</span> <span class="fl">0.5</span>, <span class="at">seed =</span> <span class="dv">1234</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; In-sample imbalance assumed to estimate pi0</span></span></code></pre></div>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">head</span>(testset)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;          id     score stratifying id_sampling    strata       Prob</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; 9924   9924 0.7008861   0.7008861        9924 (0.7,0.8) 0.15432873</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; 9204   9204 0.8140863   0.8140863        9204 (0.8,0.9) 0.15490534</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; 7719   7719 0.7565815   0.7565815        7719 (0.7,0.8) 0.15432873</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; 5185   5185 0.4639310   0.4639310        5185 (0.4,0.5) 0.04013378</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; 12373 12373 0.6112838   0.6112838       12373 (0.6,0.7) 0.15410574</span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; 15100 15100 0.4885200   0.4885200       15100 (0.4,0.5) 0.04013378</span></span></code></pre></div>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; Optimal allocation with pre-specified number of positives</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co"># alternatively, we can enter the parameters we entered earlier. the result is the same</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>testset <span class="ot">&lt;-</span> <span class="fu">testsampler</span>(<span class="at">data =</span> pop_df, <span class="at">stratifying =</span> <span class="st">&quot;score&quot;</span>, <span class="at">N_sample =</span> <span class="dv">1226</span>, </span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>                       <span class="at">allocation =</span> <span class="st">&quot;optimal&quot;</span>, <span class="at">pi1 =</span> <span class="fl">0.6</span>, <span class="at">recall =</span> <span class="fl">0.5</span>, <span class="at">seed =</span> <span class="dv">1234</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; In-sample imbalance assumed to estimate pi0</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="fu">head</span>(testset)</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt;          id     score stratifying id_sampling    strata       Prob</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; 9924   9924 0.7008861   0.7008861        9924 (0.7,0.8) 0.15432873</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; 9204   9204 0.8140863   0.8140863        9204 (0.8,0.9) 0.15490534</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; 7719   7719 0.7565815   0.7565815        7719 (0.7,0.8) 0.15432873</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; 5185   5185 0.4639310   0.4639310        5185 (0.4,0.5) 0.04013378</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; 12373 12373 0.6112838   0.6112838       12373 (0.6,0.7) 0.15410574</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; 15100 15100 0.4885200   0.4885200       15100 (0.4,0.5) 0.04013378</span></span></code></pre></div>
 <p>Now we have drawn a stratified test set, using efficient
 stratification. We could have drawn the test set using other
 stratification approaches. For instance, we could have used constant
@@ -447,43 +448,51 @@ simple random sampling. You can see below how to implement these
 approaches, and a comparison of how the distribution of sampled
 observations differs across test sets: this shows that efficient
 allocation allows us to sample more positives than SRS.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># proportional stratification</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>prop_testset <span class="ot">&lt;-</span> <span class="fu">testsampler</span>(<span class="at">data =</span> pop_df, <span class="at">stratifying =</span> <span class="st">&quot;score&quot;</span>, <span class="at">N_sample =</span> <span class="dv">1226</span>,</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>                            <span class="at">allocation =</span> <span class="st">&quot;proportional&quot;</span>, <span class="at">seed =</span> <span class="dv">1234</span>)</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co"># constant stratification</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>const_testset <span class="ot">&lt;-</span> <span class="fu">testsampler</span>(<span class="at">data =</span> pop_df, <span class="at">stratifying =</span> <span class="st">&quot;score&quot;</span>, <span class="at">N_sample =</span> <span class="dv">1226</span>, </span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>                             <span class="at">allocation =</span> <span class="st">&quot;constant&quot;</span>, <span class="at">seed =</span> <span class="dv">1234</span>)</span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co"># no stratification: simple random sample</span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>srs_testset <span class="ot">&lt;-</span> pop_df[<span class="fu">sample</span>(<span class="fu">nrow</span>(pop_df), <span class="dv">1226</span>),]</span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co"># comparison of the different distribution of observations for different sampling</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="fu">table</span>(testset<span class="sc">$</span>strata)</span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt;   (0,0.1) (0.1,0.2) (0.2,0.3) (0.3,0.4) (0.4,0.5) (0.5,0.6) (0.6,0.7) (0.7,0.8) (0.8,0.9)   (0.9,1) </span></span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt;       313       149        88        61        48       166       137       123        90        51</span></span></code></pre></div>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">table</span>(prop_testset<span class="sc">$</span>strata)</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt;   (0,0.1) (0.1,0.2) (0.2,0.3) (0.3,0.4) (0.4,0.5) (0.5,0.6) (0.6,0.7) (0.7,0.8) (0.8,0.9)   (0.9,1) </span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;       474       227       134        93        73        66        54        49        36        20</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">table</span>(const_testset<span class="sc">$</span>strata)</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt;   (0,0.1) (0.1,0.2) (0.2,0.3) (0.3,0.4) (0.4,0.5) (0.5,0.6) (0.6,0.7) (0.7,0.8) (0.8,0.9)   (0.9,1) </span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;       122       122       122       122       123       123       123       123       123       123</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>srs_testset<span class="sc">$</span>strata <span class="ot">&lt;-</span> <span class="fu">cut</span>(srs_testset<span class="sc">$</span>score, <span class="at">breaks=</span><span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="fl">0.1</span>))</span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">table</span>(srs_testset<span class="sc">$</span>strata)</span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;   (0,0.1] (0.1,0.2] (0.2,0.3] (0.3,0.4] (0.4,0.5] (0.5,0.6] (0.6,0.7] (0.7,0.8] (0.8,0.9]   (0.9,1] </span></span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt;       467       245       124        90        74        65        70        42        36        13</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># proportional stratification</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>prop_testset <span class="ot">&lt;-</span> <span class="fu">testsampler</span>(<span class="at">data =</span> pop_df, <span class="at">stratifying =</span> <span class="st">&quot;score&quot;</span>, <span class="at">N_sample =</span> <span class="dv">1226</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>                            <span class="at">allocation =</span> <span class="st">&quot;proportional&quot;</span>, <span class="at">seed =</span> <span class="dv">1234</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co"># constant stratification</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>const_testset <span class="ot">&lt;-</span> <span class="fu">testsampler</span>(<span class="at">data =</span> pop_df, <span class="at">stratifying =</span> <span class="st">&quot;score&quot;</span>, <span class="at">N_sample =</span> <span class="dv">1226</span>, </span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>                             <span class="at">allocation =</span> <span class="st">&quot;constant&quot;</span>, <span class="at">seed =</span> <span class="dv">1234</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co"># no stratification: simple random sample</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>srs_testset <span class="ot">&lt;-</span> pop_df[<span class="fu">sample</span>(<span class="fu">nrow</span>(pop_df), <span class="dv">1226</span>),]</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co"># comparison of the different distribution of observations for different sampling</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="fu">table</span>(testset<span class="sc">$</span>strata)</span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt;   (0,0.1) (0.1,0.2) (0.2,0.3) (0.3,0.4) (0.4,0.5) (0.5,0.6) (0.6,0.7) (0.7,0.8) </span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt;       313       149        88        61        48       166       137       123 </span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; (0.8,0.9)   (0.9,1) </span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt;        90        51</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="fu">table</span>(prop_testset<span class="sc">$</span>strata)</span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt;   (0,0.1) (0.1,0.2) (0.2,0.3) (0.3,0.4) (0.4,0.5) (0.5,0.6) (0.6,0.7) (0.7,0.8) </span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt;       474       227       134        93        73        66        54        49 </span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; (0.8,0.9)   (0.9,1) </span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt;        36        20</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="fu">table</span>(const_testset<span class="sc">$</span>strata)</span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt;   (0,0.1) (0.1,0.2) (0.2,0.3) (0.3,0.4) (0.4,0.5) (0.5,0.6) (0.6,0.7) (0.7,0.8) </span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt;       122       122       122       122       123       123       123       123 </span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; (0.8,0.9)   (0.9,1) </span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt;       123       123</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a>srs_testset<span class="sc">$</span>strata <span class="ot">&lt;-</span> <span class="fu">cut</span>(srs_testset<span class="sc">$</span>score, <span class="at">breaks=</span><span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="fl">0.1</span>))</span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="fu">table</span>(srs_testset<span class="sc">$</span>strata)</span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt;   (0,0.1] (0.1,0.2] (0.2,0.3] (0.3,0.4] (0.4,0.5] (0.5,0.6] (0.6,0.7] (0.7,0.8] </span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt;       467       245       124        90        74        65        70        42 </span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; (0.8,0.9]   (0.9,1] </span></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt;        36        13</span></span></code></pre></div>
 <p>Now we have drawn our test set. Let’s say we annotate it: if these
 are online comments, we would identify whether the outcome of interest
 is present or not. I’ll generate random annotations just for
 illustration, but in any actual application, the annotations will of
 course not be randomly generated.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>testset<span class="sc">$</span>truth <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(<span class="fu">nrow</span>(testset), <span class="dv">1</span>, testset<span class="sc">$</span>score)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>testset<span class="sc">$</span>truth <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(<span class="fu">nrow</span>(testset), <span class="dv">1</span>, testset<span class="sc">$</span>score)</span></code></pre></div>
 <p>We now want to create metrics that show how well or badly our
 classifier performs, as compared to our gold-standard annotations. We
 can implement this using the <code>stratified_metrics</code> function.
@@ -494,44 +503,54 @@ used to reweigh the annotations so that the test set remains
 representative of the original population. The function would work with
 any stratified test set: I illustrate this with the test set drawn with
 efficient stratification.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># we can enter the continuous scores, along with a threshold for dichotomizing them</span></span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">stratified_metrics</span>(testset, <span class="st">&#39;truth&#39;</span>, <span class="st">&#39;score&#39;</span>, <span class="st">&#39;Prob&#39;</span>, <span class="at">threshold=</span><span class="fl">0.5</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; Analytical SEs assume that stratification was done on the basis of positives vs negatives.</span></span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; For other stratification regimes, use bootstrapping.</span></span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt;          f1      f1_se precision precision_se    recall  recall_se negative_precision negative_recall</span></span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; 1 0.5771318 0.01914705 0.6876017   0.01946396 0.4972446 0.02367257          0.8432864         0.92293</span></span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt;   negative_f1  accuracy       MCC     Kappa f1_unweighted f1_weighted        BM        TN        FN         FP</span></span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; 1   0.8813125 0.8146482 0.4722983 0.4623394     0.7292222   0.8039379 0.4201746 0.6881639 0.1278861 0.05746566</span></span>
-<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt;          TP</span></span>
-<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; 1 0.1264843</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># we can enter the continuous scores, along with a threshold for dichotomizing them</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">stratified_metrics</span>(testset, <span class="st">&#39;truth&#39;</span>, <span class="st">&#39;score&#39;</span>, <span class="st">&#39;Prob&#39;</span>, <span class="at">threshold=</span><span class="fl">0.5</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; Analytical SEs assume that stratification was done on the basis of positives vs negatives.</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; For other stratification regimes, use bootstrapping.</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt;          f1      f1_se precision precision_se    recall  recall_se</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; 1 0.5771318 0.01914705 0.6876017   0.01946396 0.4972446 0.02367257</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;   negative_precision negative_recall negative_f1  accuracy       MCC     Kappa</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; 1          0.8432864         0.92293   0.8813125 0.8146482 0.4722983 0.4623394</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt;   f1_unweighted f1_weighted        BM        TN        FN         FP        TP</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; 1     0.7292222   0.8039379 0.4201746 0.6881639 0.1278861 0.05746566 0.1264843</span></span></code></pre></div>
 <p>The output contains metrics alongside their SEs. If we want
 bootstrapped CIs, the function can also support these, but then we must
 also enter the name of the variable containing the strata:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># we can enter the continuous scores, along with a threshold for dichotomizing them</span></span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">stratified_metrics</span>(<span class="at">data =</span> testset, <span class="at">truth =</span> <span class="st">&#39;truth&#39;</span>, <span class="at">pred =</span> <span class="st">&#39;score&#39;</span>, <span class="at">probs =</span> <span class="st">&#39;Prob&#39;</span>, </span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>                   <span class="at">threshold =</span> <span class="fl">0.5</span>, <span class="at">strata =</span> <span class="st">&#39;strata&#39;</span>, <span class="at">bs =</span> <span class="dv">300</span>)</span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; Analytical SEs assume that stratification was done on the basis of positives vs negatives.</span></span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt; For other stratification regimes, use bootstrapping.</span></span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt;          f1 f1_boot_se f1_boot_lwr f1_boot_upr      f1_se precision precision_boot_se precision_boot_lwr</span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt; 1 0.5771318 0.01785959   0.5469355   0.6162866 0.01914705 0.6876017        0.01712381          0.6558029</span></span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt;   precision_boot_upr precision_se    recall recall_boot_se recall_boot_lwr recall_boot_upr  recall_se</span></span>
-<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; 1           0.719349   0.01946396 0.4972446     0.02220928       0.4598981       0.5460948 0.02367257</span></span>
-<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt;   negative_precision negative_precision_boot_se negative_precision_boot_lwr negative_precision_boot_upr</span></span>
-<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt; 1          0.8432864                 0.01302841                     0.81821                   0.8691389</span></span>
-<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co">#&gt;   negative_recall negative_recall_boot_se negative_recall_boot_lwr negative_recall_boot_upr negative_f1</span></span>
-<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt; 1         0.92293             0.004095268                 0.915509                0.9304186   0.8813125</span></span>
-<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="co">#&gt;   negative_f1_boot_se negative_f1_boot_lwr negative_f1_boot_upr  accuracy accuracy_boot_se accuracy_boot_lwr</span></span>
-<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co">#&gt; 1         0.007913367            0.8667364            0.8973993 0.8146482       0.01125372          0.794446</span></span>
-<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a><span class="co">#&gt;   accuracy_boot_upr       MCC MCC_boot_se MCC_boot_lwr MCC_boot_upr     Kappa Kappa_boot_se Kappa_boot_lwr</span></span>
-<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a><span class="co">#&gt; 1         0.8375234 0.4722983   0.0231154    0.4329305    0.5228227 0.4623394    0.02439825      0.4199703</span></span>
-<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a><span class="co">#&gt;   Kappa_boot_upr f1_unweighted f1_unweighted_boot_se f1_unweighted_boot_lwr f1_unweighted_boot_upr f1_weighted</span></span>
-<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a><span class="co">#&gt; 1      0.5164275     0.7292222            0.01268056              0.7069108              0.7569754   0.8039379</span></span>
-<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co">#&gt;   f1_weighted_boot_se f1_weighted_boot_lwr f1_weighted_boot_upr        BM BM_boot_se BM_boot_lwr BM_boot_upr</span></span>
-<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a><span class="co">#&gt; 1          0.01297203            0.7803006             0.830609 0.4201746 0.02478366   0.3775558   0.4754519</span></span>
-<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a><span class="co">#&gt;          TN TN_boot_se TN_boot_lwr TN_boot_upr        FN FN_boot_se FN_boot_lwr FN_boot_upr         FP</span></span>
-<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt; 1 0.6881639 0.01063183   0.6677002   0.7092608 0.1278861 0.01063183   0.1067892   0.1483498 0.05746566</span></span>
-<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a><span class="co">#&gt;    FP_boot_se FP_boot_lwr FP_boot_upr        TP  TP_boot_se TP_boot_lwr TP_boot_upr</span></span>
-<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a><span class="co">#&gt; 1 0.003149925  0.05162576  0.06331505 0.1264843 0.003149925   0.1206349   0.1323242</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># we can enter the continuous scores, along with a threshold for dichotomizing them</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">stratified_metrics</span>(<span class="at">data =</span> testset, <span class="at">truth =</span> <span class="st">&#39;truth&#39;</span>, <span class="at">pred =</span> <span class="st">&#39;score&#39;</span>, <span class="at">probs =</span> <span class="st">&#39;Prob&#39;</span>, </span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>                   <span class="at">threshold =</span> <span class="fl">0.5</span>, <span class="at">strata =</span> <span class="st">&#39;strata&#39;</span>, <span class="at">bs =</span> <span class="dv">300</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; Analytical SEs assume that stratification was done on the basis of positives vs negatives.</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; For other stratification regimes, use bootstrapping.</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt;          f1 f1_boot_se f1_boot_lwr f1_boot_upr      f1_se precision</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; 1 0.5771318 0.01785959   0.5469355   0.6162866 0.01914705 0.6876017</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt;   precision_boot_se precision_boot_lwr precision_boot_upr precision_se</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; 1        0.01712381          0.6558029           0.719349   0.01946396</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt;      recall recall_boot_se recall_boot_lwr recall_boot_upr  recall_se</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; 1 0.4972446     0.02220928       0.4598981       0.5460948 0.02367257</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt;   negative_precision negative_precision_boot_se negative_precision_boot_lwr</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; 1          0.8432864                 0.01302841                     0.81821</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt;   negative_precision_boot_upr negative_recall negative_recall_boot_se</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; 1                   0.8691389         0.92293             0.004095268</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt;   negative_recall_boot_lwr negative_recall_boot_upr negative_f1</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; 1                 0.915509                0.9304186   0.8813125</span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt;   negative_f1_boot_se negative_f1_boot_lwr negative_f1_boot_upr  accuracy</span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; 1         0.007913367            0.8667364            0.8973993 0.8146482</span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt;   accuracy_boot_se accuracy_boot_lwr accuracy_boot_upr       MCC MCC_boot_se</span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; 1       0.01125372          0.794446         0.8375234 0.4722983   0.0231154</span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt;   MCC_boot_lwr MCC_boot_upr     Kappa Kappa_boot_se Kappa_boot_lwr</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; 1    0.4329305    0.5228227 0.4623394    0.02439825      0.4199703</span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt;   Kappa_boot_upr f1_unweighted f1_unweighted_boot_se f1_unweighted_boot_lwr</span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; 1      0.5164275     0.7292222            0.01268056              0.7069108</span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt;   f1_unweighted_boot_upr f1_weighted f1_weighted_boot_se f1_weighted_boot_lwr</span></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; 1              0.7569754   0.8039379          0.01297203            0.7803006</span></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt;   f1_weighted_boot_upr        BM BM_boot_se BM_boot_lwr BM_boot_upr        TN</span></span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; 1             0.830609 0.4201746 0.02478366   0.3775558   0.4754519 0.6881639</span></span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt;   TN_boot_se TN_boot_lwr TN_boot_upr        FN FN_boot_se FN_boot_lwr</span></span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; 1 0.01063183   0.6677002   0.7092608 0.1278861 0.01063183   0.1067892</span></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt;   FN_boot_upr         FP  FP_boot_se FP_boot_lwr FP_boot_upr        TP</span></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; 1   0.1483498 0.05746566 0.003149925  0.05162576  0.06331505 0.1264843</span></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt;    TP_boot_se TP_boot_lwr TP_boot_upr</span></span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="co">#&gt; 1 0.003149925   0.1206349   0.1323242</span></span></code></pre></div>
 <p>If we sampled the test set using simple random sampling (SRS), we
 could also use <code>stratified_metrics</code> to compute metrics and
 their standard errors. This is the most commonly drawn test set: if you
@@ -542,20 +561,47 @@ better small-sample properties (coverage, overshoot) than bootstrapped
 CIs. As you can see, the SEs are larger than what they would be had we
 used stratified sampling: stratified sampling allows us to get less
 noisy estimates of performance.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># we can enter the continuous scores, along with a threshold for dichotomizing them</span></span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>srs_testset<span class="sc">$</span>truth <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(<span class="fu">nrow</span>(srs_testset), <span class="dv">1</span>, srs_testset<span class="sc">$</span>score)</span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="fu">stratified_metrics</span>(<span class="at">data =</span> srs_testset, <span class="at">truth =</span> <span class="st">&#39;truth&#39;</span>, <span class="at">pred =</span> <span class="st">&#39;score&#39;</span>, <span class="at">threshold =</span> <span class="fl">0.5</span>)</span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; Warning in stratified_metrics(data = srs_testset, truth = &quot;truth&quot;, pred = &quot;score&quot;, : No probabilities in data:</span></span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; constant sampling probability assumed. This is a problem if stratified sampling was used for drawing test set,</span></span>
-<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt; but it is fine if the test set is a SRS</span></span>
-<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt;          f1      f1_se f1_wilson_lwr f1_wilson_upr precision precision_se precision_wilson_lwr</span></span>
-<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; 1 0.5697897 0.02589088     0.5185782     0.6195501  0.659292   0.03152651            0.5952996</span></span>
-<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt;   precision_wilson_upr    recall  recall_se recall_wilson_lwr recall_wilson_upr negative_precision</span></span>
-<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt; 1            0.7179598 0.5016835 0.02901278         0.4451622         0.5581618              0.852</span></span>
-<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co">#&gt;   negative_recall negative_f1  accuracy       MCC     Kappa f1_unweighted f1_weighted        BM        TN</span></span>
-<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co">#&gt; 1       0.9171152   0.8833593 0.8164763 0.4627401 0.4558678     0.7265745   0.8073966 0.4187987 0.6949429</span></span>
-<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a><span class="co">#&gt;          FN         FP        TP</span></span>
-<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a><span class="co">#&gt; 1 0.1207178 0.06280587 0.1215334</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># we can enter the continuous scores, along with a threshold for dichotomizing them</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>srs_testset<span class="sc">$</span>truth <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(<span class="fu">nrow</span>(srs_testset), <span class="dv">1</span>, srs_testset<span class="sc">$</span>score)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">stratified_metrics</span>(<span class="at">data =</span> srs_testset, <span class="at">truth =</span> <span class="st">&#39;truth&#39;</span>, <span class="at">pred =</span> <span class="st">&#39;score&#39;</span>, <span class="at">threshold =</span> <span class="fl">0.5</span>, <span class="at">bs=</span><span class="dv">200</span>, <span class="at">strata=</span><span class="st">&#39;strata&#39;</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; Warning in stratified_metrics(data = srs_testset, truth = &quot;truth&quot;, pred =</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; &quot;score&quot;, : No probabilities in data: constant sampling probability assumed.</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; This is a problem if stratified sampling was used for drawing test set, but it</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; is fine if the test set is a SRS</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt;          f1 f1_boot_se f1_boot_lwr f1_boot_upr      f1_se f1_wilson_lwr</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; 1 0.5697897 0.02632043   0.5159906   0.6180511 0.02589088     0.5185782</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt;   f1_wilson_upr precision precision_boot_se precision_boot_lwr</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; 1     0.6195501  0.659292        0.03359151          0.5925547</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt;   precision_boot_upr precision_se precision_wilson_lwr precision_wilson_upr</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; 1          0.7303665   0.03152651            0.5952996            0.7179598</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt;      recall recall_boot_se recall_boot_lwr recall_boot_upr  recall_se</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; 1 0.5016835     0.02958725       0.4448165       0.5530025 0.02901278</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt;   recall_wilson_lwr recall_wilson_upr negative_precision</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; 1         0.4451622         0.5581618              0.852</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt;   negative_precision_boot_se negative_precision_boot_lwr</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; 1                     0.0115                   0.8278377</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt;   negative_precision_boot_upr negative_recall negative_recall_boot_se</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; 1                   0.8729587       0.9171152             0.009300477</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt;   negative_recall_boot_lwr negative_recall_boot_upr negative_f1</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt; 1                0.8994394                0.9351622   0.8833593</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt;   negative_f1_boot_se negative_f1_boot_lwr negative_f1_boot_upr  accuracy</span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt; 1         0.007533168            0.8690182            0.8995518 0.8164763</span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt;   accuracy_boot_se accuracy_boot_lwr accuracy_boot_upr       MCC MCC_boot_se</span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt; 1       0.01084009         0.7960848         0.8409462 0.4627401  0.03077402</span></span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt;   MCC_boot_lwr MCC_boot_upr     Kappa Kappa_boot_se Kappa_boot_lwr</span></span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a><span class="co">#&gt; 1    0.4012602     0.520323 0.4558678    0.03071442      0.3949009</span></span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a><span class="co">#&gt;   Kappa_boot_upr f1_unweighted f1_unweighted_boot_se f1_unweighted_boot_lwr</span></span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a><span class="co">#&gt; 1      0.5135301     0.7265745            0.01555924              0.6958454</span></span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a><span class="co">#&gt;   f1_unweighted_boot_upr f1_weighted f1_weighted_boot_se f1_weighted_boot_lwr</span></span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="co">#&gt; 1              0.7556415   0.8073966          0.01191668            0.7844085</span></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a><span class="co">#&gt;   f1_weighted_boot_upr        BM BM_boot_se BM_boot_lwr BM_boot_upr        TN</span></span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a><span class="co">#&gt; 1            0.8312765 0.4187987 0.03063139   0.3574724   0.4753568 0.6949429</span></span>
+<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a><span class="co">#&gt;   TN_boot_se TN_boot_lwr TN_boot_upr        FN  FN_boot_se FN_boot_lwr</span></span>
+<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a><span class="co">#&gt; 1 0.01296524   0.6712887   0.7235114 0.1207178 0.009624642   0.1019372</span></span>
+<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a><span class="co">#&gt;   FN_boot_upr         FP  FP_boot_se FP_boot_lwr FP_boot_upr        TP</span></span>
+<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a><span class="co">#&gt; 1    0.140314 0.06280587 0.007232987  0.04891925  0.07587684 0.1215334</span></span>
+<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a><span class="co">#&gt;    TP_boot_se TP_boot_lwr TP_boot_upr</span></span>
+<span id="cb10-41"><a href="#cb10-41" tabindex="-1"></a><span class="co">#&gt; 1 0.009540932   0.1035685   0.1395188</span></span></code></pre></div>
 
 
 

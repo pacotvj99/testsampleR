@@ -27,7 +27,6 @@ data(pop_df)
 head(pop_df)
 ```
 
-
 We want to use a test set to learn how well our hate speech classifier performed in this context. Importantly, none of the observations in the data have been used to train the hate speech classifier: this means that the data we are inspecting has not been seen by the model. This can happen either because we are using some off-the-shelf classifier (e.g. Google's Perspective), or because we trained on some other data (e.g. sampled the training set and test set separately). How big a test set should we draw? That depends on three things: (i) what metrics we care about, (ii) how imbalanced the data is, (iii) what performance we expect.
 
 Regarding point (i), let's say that we care about the F1 score. Test sets are costly to annotate (in terms of time or money), so we want to sample the smallest test set possible, given how much variance we are willing to accept around the F1. Let's say we are willing to accept a 2pp standard error for the F1 score. Regarding point (ii), the imbalance can be observed directly from the data: we can check what proportion of observations are positive. Assuming that we dichotomize classifications at the 0.5 threshold, the proportion of positives is:
@@ -37,7 +36,7 @@ positive_share <- mean(pop_df$score>0.5)
 positive_share
 ```
 
-Lastly, regarding point (iii), we need to make some guesses about what performance we expect the classifier to have. We can base these on previous experience with similar tasks, or on the excluded folds in the training's cross-validation, or on previous performance of the classifier as established by other people's validations. Let's say that we expect precision of 0.6 and recall of 0.5. This means that we expect the classifier to catch 60% of the actually hateful comments, and that 50% of comments flagged as hateful by the classifier will truly be so. Given all this information, we can use function `test_samplesize` to determine how large a test set we need to draw:
+Lastly, regarding point (iii), we need to make some guesses about what performance we expect the classifier to have. We can base these on previous experience with similar tasks, or on the excluded folds in the training's cross-validation, or on previous performance of the classifier as established by other people's validations. Let's say that we expect precision of 0.6 and recall of 0.5. This means that we expect that 60% of comments flagged as hateful by the classifier will truly be so, and expect the classifier to catch 50% of the actually hateful comments. Given all this information, we can use function `test_samplesize` to determine how large a test set we need to draw:
 
 ```{r}
 test_samplesize(se_f1 = 0.02, pi1 = 0.6, recall = 0.5, positive_share = positive_share)
@@ -97,6 +96,7 @@ stratified_metrics(testset, 'truth', 'score', 'Prob', threshold=0.5)
 ```
 
 The output contains metrics alongside their SEs. If we want bootstrapped CIs, the function can also support these, but then we must also enter the name of the variable containing the strata:
+
 ```{r}
 # we can enter the continuous scores, along with a threshold for dichotomizing them
 stratified_metrics(data = testset, truth = 'truth', pred = 'score', probs = 'Prob', 
@@ -108,6 +108,5 @@ If we sampled the test set using simple random sampling (SRS), we could also use
 ```{r}
 # we can enter the continuous scores, along with a threshold for dichotomizing them
 srs_testset$truth <- rbinom(nrow(srs_testset), 1, srs_testset$score)
-stratified_metrics(data = srs_testset, truth = 'truth', pred = 'score', threshold = 0.5)
+stratified_metrics(data = srs_testset, truth = 'truth', pred = 'score', threshold = 0.5, bs=200, strata='strata')
 ```
-
